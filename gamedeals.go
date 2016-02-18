@@ -50,6 +50,20 @@ const cheapestCategoryTemplate = `{
     "subtitle":"salePrice"
   }
 }`
+
+const bestGameCategoryTemplate = `{
+  "schema-version": 1,
+  "template": {
+    "category-layout": "horizontal-list",
+    "card-size": "medium"
+  },
+  "components": {
+    "title": "title",
+    "art":  "art",
+    "subtitle":"salePrice"
+  }
+}`
+
 const bundleCategoryTemplate = `{
   "schema-version": 1,
   "template": {
@@ -179,6 +193,11 @@ func (s *GameDealsScope) AddEmptyQueryResults(reply *scopes.SearchReply, query s
 
 	cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true}
 	if err := registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, cs.Deals(&cheapestDealsReq)); err != nil {
+		return err
+	}
+	
+	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true}
+	if err := registerCategory(reply, "best", "Best Games", bestGameCategoryTemplate, cs.Deals(&bestGameDealsReq)); err != nil {
 		return err
 	}
 
