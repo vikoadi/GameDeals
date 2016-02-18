@@ -9,18 +9,18 @@ import (
 const bestDealsCategoryTemplate = `{
   "schema-version": 1,
   "template": {
-    "category-layout": "horizontal-list",
+    "category-layout": "carousel",
                 "card-layout": "vertical",
-                "card-size": "large",
-    "overlay":"true"
+                "card-size": "large"
   },
   "components": {
     "title": "title",
                 "art" : {
-					"aspect-ratio":2.0,
+					"aspect-ratio":2.5,
                     "field": "art"
                 },
-    "subtitle": "dealRating"
+    "subtitle":"salePrice",
+    "dealRating": "dealRating"
   }
 }`
 
@@ -28,24 +28,25 @@ const savingCategoryTemplate = `{
   "schema-version": 1,
   "template": {
     "category-layout": "horizontal-list",
-    "card-size": "small"
+    "card-size": "medium"
   },
   "components": {
     "title": "title",
     "art":  "art",
-    "subtitle": "savings"
+    "subtitle":"salePrice"
   }
 }`
+
 const cheapestCategoryTemplate = `{
   "schema-version": 1,
   "template": {
     "category-layout": "horizontal-list",
-    "card-size": "small"
+    "card-size": "medium"
   },
   "components": {
     "title": "title",
     "art":  "art",
-    "subtitle": "salePrice"
+    "subtitle":"salePrice"
   }
 }`
 const bundleCategoryTemplate = `{
@@ -212,8 +213,8 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	result.SetDndURI(dndUri)
 	result.SetTitle(title)
 	result.SetArt(art)
-	result.Set("normalPrice", normalPrice)
-	result.Set("salePrice", salePrice)
+	result.Set("normalPrice", "<b>"+normalPrice+"</b>")
+	result.Set("salePrice", "$"+salePrice+ " from $"+normalPrice+" ("+savings+"%")
 	result.Set("savings", savings)
 	result.Set("metacriticScore", metacriticScore)
 	result.Set("dealRating", dealRating)
