@@ -138,8 +138,8 @@ func (s *GameDealsScope) Preview(result *scopes.Result, metadata *scopes.ActionM
 }
 
 func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.SearchMetadata, reply *scopes.SearchReply, cancelled <-chan bool) error {
-	root_department := s.CreateDepartments(query, metadata, reply)
-	reply.RegisterDepartments(root_department)
+	//root_department := s.CreateDepartments(query, metadata, reply)
+	//reply.RegisterDepartments(root_department)
 
 	// test incompatible features in RTM version of libunity-scopes
 	filter1 := scopes.NewOptionSelectorFilter("f1", "Options", false)
