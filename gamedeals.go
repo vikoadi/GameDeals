@@ -5,6 +5,7 @@ import (
 	"launchpad.net/go-unityscopes/v2"
 	"log"
 	"strconv"
+	"math"
 )
 
 const bestDealsCategoryTemplate = `{
@@ -218,7 +219,9 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 	result := scopes.NewCategorisedResult(category)
 
 	for _, d := range deals {
-		addCategorisedGameResult(result, d.Title, d.Title, d.Title, d.NormalPrice, d.SalePrice, d.Savings, d.MetacriticScore, d.DealRating, d.Thumb)
+		savingsF, _ := d.Savings.Float64()
+		
+		addCategorisedGameResult(result, d.Title, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
 		if err := reply.Push(result); err != nil {
 			return err
 		}
@@ -227,18 +230,16 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 	return nil
 }
 
-func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndUri string, title string, normalPrice string, salePrice string, savings float64, metacriticScore int, dealRating string, art string) error {
-
-	savingStr := strconv.FormatFloat(savings, 'f', 2, 32)
+func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndUri string, title string, normalPrice string, salePrice string, savings string, metacriticScore string, dealRating string, art string) error {
 	
 	result.SetURI(uri)
 	result.SetDndURI(dndUri)
 	result.SetTitle(title)
 	result.SetArt(art)
 	result.Set("normalPrice", "<b>"+normalPrice+"</b>")
-	result.Set("salePrice", "$"+salePrice+ " from $"+normalPrice+" ("+savingStr+"%)")
-	result.Set("savings", savingStr)
-	result.Set("metacriticScore", strconv.Itoa(metacriticScore))
+	result.Set("salePrice", "$"+salePrice+ " from $"+normalPrice+" ("+savings+"%)")
+	result.Set("savings", savings)
+	result.Set("metacriticScore", metacriticScore)
 	result.Set("dealRating", dealRating)
 
 	return nil
