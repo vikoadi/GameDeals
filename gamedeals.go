@@ -212,12 +212,12 @@ func (s *GameDealsScope) AddSearchResults(reply *scopes.SearchReply, query strin
 	return nil
 }
 
-func registerCategory(reply *scopes.SearchReply, id string, title string, template string, query cheapshark.Deal) error {
+func registerCategory(reply *scopes.SearchReply, id string, title string, template string, deals cheapshark.Deal) error {
 	category := reply.RegisterCategory(id, title, "", template)
 
 	result := scopes.NewCategorisedResult(category)
 
-	for _, d := range query {
+	for _, d := range deals {
 		addCategorisedGameResult(result, d.Title, d.Title, d.Title, d.NormalPrice, d.SalePrice, d.Savings, d.MetacriticScore, d.DealRating, d.Thumb)
 		if err := reply.Push(result); err != nil {
 			return err
