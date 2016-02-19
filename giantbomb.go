@@ -45,15 +45,15 @@ type Result struct {
 	Version              string    `json:"version"`
 }
 
-func (g *GiantBomb) GetInfo(gameName string) Results {
+func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
 	var res Result
-	if err := getJson("http://www.giantbomb.com/api/search/?api_key="+api_key+"&field_list=image,name,genres,platforms,description&limit=1&format=json&resources=game&query="+gameName, &res); err != nil {
-		log.Fatal(err)
+	if e := getJson("http://www.giantbomb.com/api/search/?api_key="+api_key+"&field_list=image,name,genres,platforms,description&limit=1&format=json&resources=game&query="+gameName, &res); e != nil {
+		log.Fatal(e)
+		err = e
+		return
 	}
-	log.Println(res.Error)
-	log.Println(res.NumberOfTotalResults)
-	log.Println(res.StatusCode)
-	return res.Res[0]
+	r = res.Res[0]
+	return
 }
 
 func getJson(url string, target interface{}) error {

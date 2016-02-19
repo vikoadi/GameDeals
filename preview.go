@@ -2,6 +2,7 @@ package main
 
 import (
 	"launchpad.net/go-unityscopes/v2"
+	"log"
 )
 
 type Preview struct {
@@ -38,13 +39,19 @@ func (p *Preview) AddPreviewResult(result *scopes.Result, metadata *scopes.Actio
 	// It has a single source property, mapped to the result's art property
 	image.AddAttributeMapping("source", "art")
 
-	var gb GiantBomb
-	info := gb.GetInfo(result.Title())
 	// Define the summary section
 	description := scopes.NewPreviewWidget("summary", "text")
-	// It has a text property, mapped to the result's description property
-	//description.AddAttributeMapping("text", "description")
-	description.AddAttributeValue("text", info.Description)
+	description.AddAttributeValue("text", "No Description")
+
+	var gb GiantBomb
+	if info, err := gb.GetInfo(result.Title()); err != nil {
+		log.Fatal(err)
+	} else {
+		// It has a text property, mapped to the result's description property
+		//description.AddAttributeMapping("text", "description")
+		image.AddAttributeValue("source", info.Image.SmallURL)
+		description.AddAttributeValue("text", info.Description)
+	}
 
 	// build variant map.
 	tuple1 := make(map[string]interface{})
