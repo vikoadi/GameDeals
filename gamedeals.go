@@ -41,7 +41,6 @@ func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.Sear
 
 type Settings struct {
 	Steamworks bool `json:"steamworks"`
-	Localized  bool `json:"localized"`
 	MaxPrice   int  `json:"max_price"`
 }
 
