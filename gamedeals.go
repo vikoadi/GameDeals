@@ -142,19 +142,19 @@ func (s *GameDealsScope) Preview(result *scopes.Result, metadata *scopes.ActionM
 	// build variant map.
 	tuple1 := make(map[string]interface{})
 	tuple1["id"] = "open"
-	tuple1["label"] = "Open"
-	tuple1["uri"] = "application:///tmp/non-existent.desktop"
+	tuple1["label"] = "Go to Store"
+	tuple1["uri"] = result.URI()
 
-	tuple2 := make(map[string]interface{})
-	tuple1["id"] = "download"
-	tuple1["label"] = "Download"
+	//tuple2 := make(map[string]interface{})
+	//tuple1["id"] = "download"
+	//tuple1["label"] = "Download"
 
-	tuple3 := make(map[string]interface{})
-	tuple1["id"] = "hide"
-	tuple1["label"] = "Hide"
+	//tuple3 := make(map[string]interface{})
+	//tuple1["id"] = "hide"
+	//tuple1["label"] = "Hide"
 
 	actions := scopes.NewPreviewWidget("actions", "actions")
-	actions.AddAttributeValue("actions", []interface{}{tuple1, tuple2, tuple3})
+	actions.AddAttributeValue("actions", []interface{}{tuple1})
 
 	var scope_data string
 	metadata.ScopeData(scope_data)
@@ -253,7 +253,7 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 	for _, d := range deals {
 		savingsF, _ := d.Savings.Float64()
 		
-		addCategorisedGameResult(result, d.Title, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
+		addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
 		if err := reply.Push(result); err != nil {
 			return err
 		}
@@ -272,6 +272,7 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	result.Set("salePrice", "$"+salePrice+ " from $"+normalPrice+" ("+savings+"%)")
 	result.Set("savings", savings)
 	result.Set("metacriticScore", metacriticScore)
+	result.Set("uri", uri)
 	
 	
 	type Attr struct {
