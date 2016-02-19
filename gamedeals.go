@@ -14,12 +14,14 @@ type GameDealsScope struct {
 }
 
 var preview Preview
+
 func (s *GameDealsScope) Preview(result *scopes.Result, metadata *scopes.ActionMetadata, reply *scopes.PreviewReply, cancelled <-chan bool) error {
-	
-	return preview.AddPreviewResult (result, metadata, reply)
+
+	return preview.AddPreviewResult(result, metadata, reply)
 }
 
 var qu Query
+
 func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.SearchMetadata, reply *scopes.SearchReply, cancelled <-chan bool) error {
 	//root_department := s.CreateDepartments(query, metadata, reply)
 	//reply.RegisterDepartments(root_department)
@@ -29,7 +31,7 @@ func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.Sear
 	var filterState scopes.FilterState
 	// for RTM version of libunity-scopes we should see a log message
 	reply.PushFilters([]scopes.Filter{filter1}, filterState)
-	
+
 	return qu.AddQueryResults(reply, query.QueryString())
 }
 

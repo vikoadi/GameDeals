@@ -1,10 +1,10 @@
 package main
 
 import (
-	"cheapshark"	
+	"cheapshark"
 	"launchpad.net/go-unityscopes/v2"
-	"strconv"
 	"math"
+	"strconv"
 )
 
 type Query struct {
@@ -96,6 +96,7 @@ const searchCategoryTemplate = `{
     "subtitle": "salePrice"
   }
 }`
+
 func (s *Query) AddQueryResults(reply *scopes.SearchReply, query string) error {
 	if query == "" {
 		return s.AddEmptyQueryResults(reply, query)
@@ -120,7 +121,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string) er
 	if err := registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, cs.Deals(&cheapestDealsReq)); err != nil {
 		return err
 	}
-	
+
 	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true}
 	if err := registerCategory(reply, "best", "Best Games", bestGameCategoryTemplate, cs.Deals(&bestGameDealsReq)); err != nil {
 		return err
@@ -133,18 +134,17 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string) er
 	return nil
 }
 
-
 var stores cheapshark.Store
 
 func (s *Query) AddSearchResults(reply *scopes.SearchReply, query string) error {
 	var cs cheapshark.CheapShark
-	
+
 	if stores == nil {
-		stores=cs.Stores()
+		stores = cs.Stores()
 	}
 
 	for _, store := range stores {
-		searchReq := cheapshark.DealsRequest{Title: query, StoreID : store.StoreID }
+		searchReq := cheapshark.DealsRequest{Title: query, StoreID: store.StoreID}
 		if err := registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, cs.Deals(&searchReq)); err != nil {
 			return err
 		}
@@ -159,7 +159,7 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 
 	for _, d := range deals {
 		savingsF, _ := d.Savings.Float64()
-		
+
 		addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
 		if err := reply.Push(result); err != nil {
 			return err
@@ -170,26 +170,25 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 }
 
 func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndUri string, title string, normalPrice string, salePrice string, savings string, metacriticScore string, dealRating string, art string) error {
-	
+
 	result.SetURI(uri)
 	result.SetDndURI(dndUri)
 	result.SetTitle(title)
 	result.SetArt(art)
 	result.Set("normalPrice", normalPrice)
-	result.Set("salePrice", "$"+salePrice+ " from $"+normalPrice+" ("+savings+"%)")
+	result.Set("salePrice", "$"+salePrice+" from $"+normalPrice+" ("+savings+"%)")
 	result.Set("savings", savings)
 	result.Set("metacriticScore", metacriticScore)
 	result.Set("uri", uri)
-	
-	
+
 	type Attr struct {
 		Value string `json:"value"`
-		Icon string `json:"value"`
+		Icon  string `json:"value"`
 	}
-	
+
 	result.Set("attributes", []Attr{
-		Attr{"one",""},
-		Attr{"two",""},
+		Attr{"one", ""},
+		Attr{"two", ""},
 	})
 
 	return nil

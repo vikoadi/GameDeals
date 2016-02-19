@@ -7,7 +7,7 @@ import (
 type Preview struct {
 }
 
-func (p *Preview) AddPreviewResult (result *scopes.Result, metadata *scopes.ActionMetadata, reply *scopes.PreviewReply) error {
+func (p *Preview) AddPreviewResult(result *scopes.Result, metadata *scopes.ActionMetadata, reply *scopes.PreviewReply) error {
 	layout1col := scopes.NewColumnLayout(1)
 	layout2col := scopes.NewColumnLayout(2)
 	layout3col := scopes.NewColumnLayout(3)
