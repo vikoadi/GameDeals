@@ -22,7 +22,7 @@ const bestDealsCategoryTemplate = `{
                     "field": "art"
                 },
     "subtitle":"salePrice",
-    "dealRating": "dealRating"
+    "attributes":"attributes"
   }
 }`
 
@@ -35,7 +35,8 @@ const savingCategoryTemplate = `{
   "components": {
     "title": "title",
     "art":  "art",
-    "subtitle":"salePrice"
+    "subtitle":"salePrice",
+    "attributes":"attributes"
   }
 }`
 
@@ -48,7 +49,8 @@ const cheapestCategoryTemplate = `{
   "components": {
     "title": "title",
     "art":  "art",
-    "subtitle":"salePrice"
+    "subtitle":"salePrice",
+    "attributes":"attributes"
   }
 }`
 
@@ -61,7 +63,8 @@ const bestGameCategoryTemplate = `{
   "components": {
     "title": "title",
     "art":  "art",
-    "subtitle":"salePrice"
+    "subtitle":"salePrice",
+    "attributes":"attributes"
   }
 }`
 
@@ -76,6 +79,19 @@ const bundleCategoryTemplate = `{
     "title": "title",
     "art":  "art",
     "subtitle": "username"
+  }
+}`
+const searchCategoryTemplate = `{
+  "schema-version": 1,
+  "template": {
+    "category-layout": "vertical-journal",
+    "card-layout" : "horizontal",
+    "card-size": "small"
+  },
+  "components": {
+    "title": "title",
+    "art":  "art",
+    "subtitle": "salePrice"
   }
 }`
 
@@ -153,6 +169,7 @@ func (s *GameDealsScope) Preview(result *scopes.Result, metadata *scopes.ActionM
 	return nil
 }
 
+
 func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.SearchMetadata, reply *scopes.SearchReply, cancelled <-chan bool) error {
 	//root_department := s.CreateDepartments(query, metadata, reply)
 	//reply.RegisterDepartments(root_department)
@@ -209,7 +226,22 @@ func (s *GameDealsScope) AddEmptyQueryResults(reply *scopes.SearchReply, query s
 	return nil
 }
 
+
+var stores cheapshark.Store
+
 func (s *GameDealsScope) AddSearchResults(reply *scopes.SearchReply, query string) error {
+	var cs cheapshark.CheapShark
+	
+	if stores == nil {
+		stores=cs.Stores()
+	}
+
+	for _, store := range stores {
+		searchReq := cheapshark.DealsRequest{Title: query, StoreID : store.StoreID }
+		if err := registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, cs.Deals(&searchReq)); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -236,11 +268,21 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	result.SetDndURI(dndUri)
 	result.SetTitle(title)
 	result.SetArt(art)
-	result.Set("normalPrice", "<b>"+normalPrice+"</b>")
+	result.Set("normalPrice", normalPrice)
 	result.Set("salePrice", "$"+salePrice+ " from $"+normalPrice+" ("+savings+"%)")
 	result.Set("savings", savings)
 	result.Set("metacriticScore", metacriticScore)
-	result.Set("dealRating", dealRating)
+	
+	
+	type Attr struct {
+		Value string `json:"value"`
+		Icon string `json:"value"`
+	}
+	
+	result.Set("attributes", []Attr{
+		Attr{"one",""},
+		Attr{"two",""},
+	})
 
 	return nil
 }
