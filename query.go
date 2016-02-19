@@ -134,7 +134,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	}
 
 	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true, Steamworks: steamworks, UpperPrice: max_price}
-	if err := registerCategory(reply, "best", "Best Games", bestGameCategoryTemplate, cs.Deals(&bestGameDealsReq)); err != nil {
+	if err := registerCategory(reply, "best", "Popular Games", bestGameCategoryTemplate, cs.Deals(&bestGameDealsReq)); err != nil {
 		return err
 	}
 
