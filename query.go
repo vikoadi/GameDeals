@@ -5,6 +5,7 @@ import (
 	"launchpad.net/go-unityscopes/v2"
 	"math"
 	"strconv"
+	//	"log"
 )
 
 type Query struct {
@@ -97,32 +98,42 @@ const searchCategoryTemplate = `{
   }
 }`
 
-func (s *Query) AddQueryResults(reply *scopes.SearchReply, query string) error {
+func (s *Query) AddQueryResults(reply *scopes.SearchReply, query string, settings Settings) error {
 	if query == "" {
-		return s.AddEmptyQueryResults(reply, query)
+		return s.AddEmptyQueryResults(reply, query, settings)
 	} else {
 		return s.AddSearchResults(reply, query)
 	}
 }
-func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string) error {
+func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, settings Settings) error {
 	var cs cheapshark.CheapShark
 
-	bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true}
+	steamworks := settings.Steamworks
+	max_price := settings.MaxPrice
+
+	// cheapshark treat 50 as no limit, but we want different behaviour
+	if max_price == 50 {
+		max_price = 51
+	} else if max_price == 0 {
+		max_price = 50
+	}
+
+	bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price}
 	if err := registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, cs.Deals(&bestDealsReq)); err != nil {
 		return err
 	}
 
-	savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true}
+	savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true, Steamworks: steamworks, UpperPrice: max_price}
 	if err := registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, cs.Deals(&savingDealsReq)); err != nil {
 		return err
 	}
 
-	cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true}
+	cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true, Steamworks: steamworks, UpperPrice: max_price}
 	if err := registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, cs.Deals(&cheapestDealsReq)); err != nil {
 		return err
 	}
 
-	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true}
+	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true, Steamworks: steamworks, UpperPrice: max_price}
 	if err := registerCategory(reply, "best", "Best Games", bestGameCategoryTemplate, cs.Deals(&bestGameDealsReq)); err != nil {
 		return err
 	}

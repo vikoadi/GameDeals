@@ -3,6 +3,7 @@ package main
 import (
 	"launchpad.net/go-unityscopes/v2"
 	"log"
+	//"fmt"
 )
 
 // SCOPE ***********************************************************************
@@ -32,11 +33,21 @@ func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.Sear
 	// for RTM version of libunity-scopes we should see a log message
 	reply.PushFilters([]scopes.Filter{filter1}, filterState)
 
-	return qu.AddQueryResults(reply, query.QueryString())
+	var settings Settings
+	s.base.Settings(&settings)
+
+	return qu.AddQueryResults(reply, query.QueryString(), settings)
+}
+
+type Settings struct {
+	Steamworks bool `json:"steamworks"`
+	Localized  bool `json:"localized"`
+	MaxPrice   int  `json:"max_price"`
 }
 
 func (s *GameDealsScope) SetScopeBase(base *scopes.ScopeBase) {
 	s.base = base
+
 }
 
 // DEPARTMENTS *****************************************************************
