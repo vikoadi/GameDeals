@@ -128,13 +128,3 @@ func getExactName(result Result, gameName string) (res Results, err error) {
 func parseJson(jsonStream string, target interface{}) error {
 	return json.NewDecoder(strings.NewReader(jsonStream)).Decode(target)
 }
-
-func getJson(url string, target interface{}) error {
-	r, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-
-	return json.NewDecoder(r.Body).Decode(target)
-}
