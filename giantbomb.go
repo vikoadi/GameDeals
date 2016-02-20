@@ -64,7 +64,11 @@ func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
 	var res Result
 	log.Println("getinfo for ", gameName)
 	if content, inCache := GiantBombCache.Get(gameName); inCache {
-		parseJson(string(content), &res)
+		if er := parseJson(string(content), &res); er != nil {
+			log.Println(er)
+			err = er
+			return
+		}
 		if result, e := getExactName(res, gameName); e != nil {
 			err = e
 			return
@@ -85,8 +89,14 @@ func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
 			log.Println("cant readall", er2)
 			return
 		} else {
-			parseJson(string(data), &res)
+			if er := parseJson(string(data), &res); er != nil {
+				log.Println(er)
+				err = er
+				return
+			}
+
 			GiantBombCache.Set(gameName, []byte(data))
+
 			if result, e := getExactName(res, gameName); e != nil {
 				err = e
 				return

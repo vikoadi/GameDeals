@@ -3,9 +3,9 @@ package main
 import (
 	"cheapshark"
 	"launchpad.net/go-unityscopes/v2"
+	"log"
 	"math"
 	"strconv"
-	//	"log"
 )
 
 type Query struct {
@@ -120,23 +120,39 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 		max_price = 50
 	}
 
-	bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize:queryLimit}
-	if err := registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, cs.Deals(&bestDealsReq)); err != nil {
+	bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
+	if deals, e := cs.Deals(&bestDealsReq); e != nil {
+		log.Println(e)
+		return e
+	} else if err := registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, deals); err != nil {
+		log.Println(e)
 		return err
 	}
 
-	savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize:queryLimit}
-	if err := registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, cs.Deals(&savingDealsReq)); err != nil {
+	savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
+	if deals, e := cs.Deals(&savingDealsReq); e != nil {
+		log.Println(e)
+		return e
+	} else if err := registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, deals); err != nil {
+		log.Println(e)
 		return err
 	}
 
-	cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize:queryLimit}
-	if err := registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, cs.Deals(&cheapestDealsReq)); err != nil {
+	cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
+	if deals, e := cs.Deals(&cheapestDealsReq); e != nil {
+		log.Println(e)
+		return e
+	} else if err := registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, deals); err != nil {
+		log.Println(e)
 		return err
 	}
 
-	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize:queryLimit}
-	if err := registerCategory(reply, "best", "Popular Games", bestGameCategoryTemplate, cs.Deals(&bestGameDealsReq)); err != nil {
+	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
+	if deals, e := cs.Deals(&bestGameDealsReq); e != nil {
+		log.Println(e)
+		return e
+	} else if err := registerCategory(reply, "best", "Popular Games", bestGameCategoryTemplate, deals); err != nil {
+		log.Println(e)
 		return err
 	}
 
@@ -158,7 +174,10 @@ func (s *Query) AddSearchResults(reply *scopes.SearchReply, query string) error 
 
 	for _, store := range stores {
 		searchReq := cheapshark.DealsRequest{Title: query, StoreID: store.StoreID}
-		if err := registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, cs.Deals(&searchReq)); err != nil {
+		if deals, err := cs.Deals(&searchReq); err != nil {
+			log.Println(err)
+			return err
+		} else if err := registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, deals); err != nil {
 			return err
 		}
 	}
@@ -173,7 +192,7 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 	for _, d := range deals {
 		savingsF, _ := d.Savings.Float64()
 
-		if info, err := gb.GetInfo(d.Title);err!=nil {
+		if info, err := gb.GetInfo(d.Title); err != nil {
 			// cant find data from GB database, use cheapshark one
 			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
 		} else {
