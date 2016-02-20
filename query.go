@@ -11,6 +11,8 @@ import (
 type Query struct {
 }
 
+const queryLimit = 30
+
 const bestDealsCategoryTemplate = `{
   "schema-version": 1,
   "template": {
@@ -118,22 +120,22 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 		max_price = 50
 	}
 
-	bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price}
+	bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize:queryLimit}
 	if err := registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, cs.Deals(&bestDealsReq)); err != nil {
 		return err
 	}
 
-	savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true, Steamworks: steamworks, UpperPrice: max_price}
+	savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize:queryLimit}
 	if err := registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, cs.Deals(&savingDealsReq)); err != nil {
 		return err
 	}
 
-	cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true, Steamworks: steamworks, UpperPrice: max_price}
+	cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize:queryLimit}
 	if err := registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, cs.Deals(&cheapestDealsReq)); err != nil {
 		return err
 	}
 
-	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true, Steamworks: steamworks, UpperPrice: max_price}
+	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize:queryLimit}
 	if err := registerCategory(reply, "best", "Popular Games", bestGameCategoryTemplate, cs.Deals(&bestGameDealsReq)); err != nil {
 		return err
 	}
