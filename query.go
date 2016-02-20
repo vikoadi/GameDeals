@@ -124,7 +124,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	if deals, e := cs.Deals(&bestDealsReq); e != nil {
 		log.Println(e)
 		return e
-	} else if err := registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, deals); err != nil {
+	} else if err := registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, deals, true); err != nil {
 		log.Println(e)
 		return err
 	}
@@ -133,7 +133,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	if deals, e := cs.Deals(&savingDealsReq); e != nil {
 		log.Println(e)
 		return e
-	} else if err := registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, deals); err != nil {
+	} else if err := registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, deals, true); err != nil {
 		log.Println(e)
 		return err
 	}
@@ -142,7 +142,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	if deals, e := cs.Deals(&cheapestDealsReq); e != nil {
 		log.Println(e)
 		return e
-	} else if err := registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, deals); err != nil {
+	} else if err := registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, deals, true); err != nil {
 		log.Println(e)
 		return err
 	}
@@ -151,7 +151,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	if deals, e := cs.Deals(&bestGameDealsReq); e != nil {
 		log.Println(e)
 		return e
-	} else if err := registerCategory(reply, "best", "Popular Games", bestGameCategoryTemplate, deals); err != nil {
+	} else if err := registerCategory(reply, "best", "Popular Games", bestGameCategoryTemplate, deals, true); err != nil {
 		log.Println(e)
 		return err
 	}
@@ -177,14 +177,14 @@ func (s *Query) AddSearchResults(reply *scopes.SearchReply, query string) error 
 		if deals, err := cs.Deals(&searchReq); err != nil {
 			log.Println(err)
 			return err
-		} else if err := registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, deals); err != nil {
+		} else if err := registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, deals, false); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func registerCategory(reply *scopes.SearchReply, id string, title string, template string, deals cheapshark.Deal) error {
+func registerCategory(reply *scopes.SearchReply, id string, title string, template string, deals cheapshark.Deal, completeDetail bool) error {
 	category := reply.RegisterCategory(id, title, "", template)
 
 	result := scopes.NewCategorisedResult(category)
@@ -192,12 +192,15 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 	for _, d := range deals {
 		savingsF, _ := d.Savings.Float64()
 
-		if info, err := gb.GetInfo(d.Title); err != nil {
-			// cant find data from GB database, use cheapshark one
-			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
-		} else {
-			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL)
+		if completeDetail {
+			if info, err := gb.GetInfo(d.Title); err == nil {
+				addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL)
+				return nil
+			}
 		}
+		// cant find data from GB database, use cheapshark one
+		addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
+
 		if err := reply.Push(result); err != nil {
 			return err
 		}
