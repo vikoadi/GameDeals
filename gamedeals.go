@@ -10,6 +10,18 @@ import (
 
 var scope_interface scopes.Scope
 var gb GiantBomb
+var departments = [][2]string{
+	{"action", "Action"},
+	{"actionadventure", "Action-adventure"},
+	{"adventure", "Adventure"},
+	{"fighting", "Fighting"},
+	{"firstpersonshooter", "First-Person Shooter"},
+	{"platformer", "Platformer"},
+	{"puzzle", "Puzzle"},
+	{"realtimestrategy", "Real-Time Strategy"},
+	{"roleplaying", "Role Playing"},
+	{"strategy", "Strategy"},
+}
 
 type GameDealsScope struct {
 	base *scopes.ScopeBase
@@ -25,8 +37,8 @@ func (s *GameDealsScope) Preview(result *scopes.Result, metadata *scopes.ActionM
 var qu Query
 
 func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.SearchMetadata, reply *scopes.SearchReply, cancelled <-chan bool) error {
-	//root_department := s.CreateDepartments(query, metadata, reply)
-	//reply.RegisterDepartments(root_department)
+	root_department := s.CreateDepartments(query, metadata, reply)
+	reply.RegisterDepartments(root_department)
 
 	// test incompatible features in RTM version of libunity-scopes
 	filter1 := scopes.NewOptionSelectorFilter("f1", "Options", false)
@@ -53,65 +65,17 @@ func (s *GameDealsScope) SetScopeBase(base *scopes.ScopeBase) {
 
 // DEPARTMENTS *****************************************************************
 
-func SearchDepartment(root *scopes.Department, id string) *scopes.Department {
-	sub_depts := root.Subdepartments()
-	for _, element := range sub_depts {
-		if element.Id() == id {
-			return element
-		}
-	}
-	return nil
-}
-
-func (s *GameDealsScope) GetRockSubdepartments(query *scopes.CannedQuery,
-	metadata *scopes.SearchMetadata,
-	reply *scopes.SearchReply) *scopes.Department {
-	active_dep, err := scopes.NewDepartment("Rock", query, "Rock Music")
-	if err == nil {
-		active_dep.SetAlternateLabel("Rock Music Alt")
-		department, _ := scopes.NewDepartment("60s", query, "Rock from the 60s")
-		active_dep.AddSubdepartment(department)
-
-		department2, _ := scopes.NewDepartment("70s", query, "Rock from the 70s")
-		active_dep.AddSubdepartment(department2)
-	}
-
-	return active_dep
-}
-
-func (s *GameDealsScope) GetSoulSubdepartments(query *scopes.CannedQuery,
-	metadata *scopes.SearchMetadata,
-	reply *scopes.SearchReply) *scopes.Department {
-	active_dep, err := scopes.NewDepartment("Soul", query, "Soul Music")
-	if err == nil {
-		active_dep.SetAlternateLabel("Soul Music Alt")
-		department, _ := scopes.NewDepartment("Motown", query, "Motown Soul")
-		active_dep.AddSubdepartment(department)
-
-		department2, _ := scopes.NewDepartment("New Soul", query, "New Soul")
-		active_dep.AddSubdepartment(department2)
-	}
-
-	return active_dep
-}
-
 func (s *GameDealsScope) CreateDepartments(query *scopes.CannedQuery,
 	metadata *scopes.SearchMetadata,
 	reply *scopes.SearchReply) *scopes.Department {
-	department, _ := scopes.NewDepartment("", query, "Browse Music")
-	department.SetAlternateLabel("Browse Music Alt")
 
-	rock_dept := s.GetRockSubdepartments(query, metadata, reply)
-	if rock_dept != nil {
-		department.AddSubdepartment(rock_dept)
+	all, _ := scopes.NewDepartment("", query, "All Genres")
+	for _, genre := range departments {
+		department, _ := scopes.NewDepartment(genre[0], query, genre[1])
+		all.AddSubdepartment(department)
 	}
 
-	soul_dept := s.GetSoulSubdepartments(query, metadata, reply)
-	if soul_dept != nil {
-		department.AddSubdepartment(soul_dept)
-	}
-
-	return department
+	return all
 }
 
 // MAIN ************************************************************************
