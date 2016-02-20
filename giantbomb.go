@@ -65,10 +65,11 @@ func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
 	log.Println("getinfo for ", gameName)
 	if content, inCache := GiantBombCache.Get(gameName); inCache {
 		parseJson(string(content), &res)
-		if len(res.Res) > 0 {
-			r = res.Res[0]
+		if result, e := getExactName(res, gameName); e != nil {
+			err = e
+			return
 		} else {
-			err = errors.New("not enough data")
+			r = result
 			return
 		}
 	} else {
@@ -85,16 +86,32 @@ func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
 			return
 		} else {
 			parseJson(string(data), &res)
-			if len(res.Res) > 0 {
-				GiantBombCache.Set(gameName, []byte(data))
-				r = res.Res[0]
+			GiantBombCache.Set(gameName, []byte(data))
+			if result, e := getExactName(res, gameName); e != nil {
+				err = e
+				return
 			} else {
-				err = errors.New("not enough data")
+				r = result
 				return
 			}
 		}
 	}
 
+	return
+}
+
+func getExactName(result Result, gameName string) (res Results, err error) {
+	if (len(result.Res)) <= 0 {
+		err = errors.New("not enough data")
+		return
+	}
+	for _, g := range result.Res {
+		if g.Name == gameName {
+			res = g
+			return
+		}
+	}
+	err = errors.New("Game Name not found in list")
 	return
 }
 
