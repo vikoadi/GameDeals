@@ -91,7 +91,7 @@ const searchCategoryTemplate = `{
   "template": {
     "category-layout": "vertical-journal",
     "card-layout" : "horizontal",
-    "card-size": "small"
+    "card-size": "20"
   },
   "components": {
     "title": "title",
@@ -216,7 +216,7 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	result.SetTitle(title)
 	result.SetArt(art)
 	result.Set("normalPrice", normalPrice)
-	result.Set("salePrice", "$"+salePrice+" from $"+normalPrice+" ("+savings+"%)")
+	result.Set("salePrice", "<b>$"+salePrice+"</b> from $"+normalPrice+" ("+savings+"%)")
 	result.Set("savings", savings)
 	result.Set("metacriticScore", metacriticScore)
 	result.Set("uri", uri)
