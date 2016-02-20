@@ -196,8 +196,11 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 			if info, err := gb.GetInfo(d.Title); err == nil {
 				if Filter(info.Platforms, platformFilter) {
 					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL)
+					if err := reply.Push(result); err != nil {
+						return err
+					}
+					continue
 				}
-				return nil
 			}
 		}
 		// cant find data from GB database, use cheapshark one
