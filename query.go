@@ -199,17 +199,16 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 					if err := reply.Push(result); err != nil {
 						return err
 					}
-					continue
 				}
+				continue
 			}
 		}
 		// cant find data from GB database, use cheapshark one
-		if platformFilter&8 > 1 { // only add if unknown platform is enabled
+		if platformFilter&8 > 0 { // only add if unknown platform is enabled
 			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
-		}
-
-		if err := reply.Push(result); err != nil {
-			return err
+			if err := reply.Push(result); err != nil {
+				return err
+			}
 		}
 	}
 

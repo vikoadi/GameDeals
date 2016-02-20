@@ -132,18 +132,22 @@ func parseJson(jsonStream string, target interface{}) error {
 func Filter(platformsInfo Platforms, filter int) bool {
 	platform := 0
 	for _, platformInfo := range platformsInfo {
-		if platformInfo.Name == "LIN" {
+		if platformInfo.Abbreviation == "LIN" {
 			platform += 1
 		}
-		if platformInfo.Name == "MAC" {
+		if platformInfo.Abbreviation == "MAC" {
 			platform += 2
 		}
-		if platformInfo.Name == "PC" {
+		if platformInfo.Abbreviation == "PC" {
 			platform += 4
 		}
-		if platform == 0 {
-			platform = 8
-		}
 	}
+
+	// found nothing, set it to unknown
+	if platform == 0 {
+		platform = 8
+	}
+
+	log.Println(filter, "x", platform)
 	return (filter & platform) > 0
 }
