@@ -9,6 +9,7 @@ import (
 // SCOPE ***********************************************************************
 
 var scope_interface scopes.Scope
+var gb GiantBomb
 
 type GameDealsScope struct {
 	base *scopes.ScopeBase
@@ -47,6 +48,7 @@ type Settings struct {
 func (s *GameDealsScope) SetScopeBase(base *scopes.ScopeBase) {
 	s.base = base
 
+	gb.SetCacheDirectory(base.CacheDirectory())
 }
 
 // DEPARTMENTS *****************************************************************

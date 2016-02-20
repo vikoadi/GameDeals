@@ -1,18 +1,22 @@
 package main
 
 import (
-	"log"
 	"testing"
 )
 
 func TestGames(t *testing.T) {
 	var gb GiantBomb
 
-	info := gb.GetInfo("xcom")
+	gb.SetCacheDirectory("cache")
+
+	info, _ := gb.GetInfo("xcom")
 
 	if info.Name == "" {
 		t.Log("Name is empty")
 		t.Fail()
 	}
-	log.Println(info.Description)
+	if len(info.Platforms) < 1 {
+		t.Log("platform is empty")
+		t.Fail()
+	}
 }

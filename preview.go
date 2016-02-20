@@ -36,16 +36,15 @@ func (p *Preview) AddPreviewResult(result *scopes.Result, metadata *scopes.Actio
 
 	// Define the image section
 	image := scopes.NewPreviewWidget("image", "image")
-	// It has a single source property, mapped to the result's art property
-	image.AddAttributeMapping("source", "art")
 
 	// Define the summary section
 	description := scopes.NewPreviewWidget("summary", "text")
 	description.AddAttributeValue("text", "No Description")
 
-	var gb GiantBomb
 	if info, err := gb.GetInfo(result.Title()); err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		// fallback to cheapshark image
+		image.AddAttributeMapping("source", "art")
 	} else {
 		// It has a text property, mapped to the result's description property
 		//description.AddAttributeMapping("text", "description")

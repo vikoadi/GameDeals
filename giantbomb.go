@@ -1,12 +1,18 @@
 package main
 
 import (
+	//"bytes"
 	"encoding/json"
+	"errors"
+	"github.com/GitbookIO/diskache"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var api_key = [insert-your-api-key]
+var GiantBombCache *diskache.Diskache
 
 type GiantBomb struct {
 }
@@ -45,15 +51,55 @@ type Result struct {
 	Version              string    `json:"version"`
 }
 
-func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
-	var res Result
-	if e := getJson("http://www.giantbomb.com/api/search/?api_key="+api_key+"&field_list=image,name,genres,platforms,description&limit=1&format=json&resources=game&query="+gameName, &res); e != nil {
-		log.Fatal(e)
-		err = e
-		return
+func (g *GiantBomb) SetCacheDirectory(directory string) {
+	// cache directory
+	opts := &diskache.Opts{
+		Directory: directory + "/giantbomb",
 	}
-	r = res.Res[0]
+	GiantBombCache, _ = diskache.New(opts)
+}
+
+func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
+
+	var res Result
+	log.Println("getinfo for ", gameName)
+	if content, inCache := GiantBombCache.Get(gameName); inCache {
+		parseJson(string(content), &res)
+		if len(res.Res) > 0 {
+			r = res.Res[0]
+		} else {
+			err = errors.New("not enough data")
+			return
+		}
+	} else {
+		url := "http://www.giantbomb.com/api/search/?api_key=" + api_key + "&field_list=image,name,genres,platforms,description&limit=1&format=json&resources=game&query=" + gameName
+		resp, e1 := http.Get(url)
+		if e1 != nil {
+			err = e1
+			return
+		}
+		defer resp.Body.Close()
+
+		if data, er2 := ioutil.ReadAll(resp.Body); er2 != nil {
+			log.Println("cant readall", er2)
+			return
+		} else {
+			parseJson(string(data), &res)
+			if len(res.Res) > 0 {
+				GiantBombCache.Set(gameName, []byte(data))
+				r = res.Res[0]
+			} else {
+				err = errors.New("not enough data")
+				return
+			}
+		}
+	}
+
 	return
+}
+
+func parseJson(jsonStream string, target interface{}) error {
+	return json.NewDecoder(strings.NewReader(jsonStream)).Decode(target)
 }
 
 func getJson(url string, target interface{}) error {
