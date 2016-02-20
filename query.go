@@ -21,7 +21,7 @@ const bestDealsCategoryTemplate = `{
   "components": {
     "title": "title",
                 "art" : {
-					"aspect-ratio":2.5,
+					"aspect-ratio":0.725,
                     "field": "art"
                 },
     "subtitle":"salePrice",
@@ -171,7 +171,12 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 	for _, d := range deals {
 		savingsF, _ := d.Savings.Float64()
 
-		addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
+		if info, err := gb.GetInfo(d.Title);err!=nil {
+			// cant find data from GB database, use cheapshark one
+			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
+		} else {
+			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL)
+		}
 		if err := reply.Push(result); err != nil {
 			return err
 		}
