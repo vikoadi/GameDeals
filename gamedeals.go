@@ -48,6 +48,7 @@ func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.Sear
 
 	var settings Settings
 	s.base.Settings(&settings)
+	qu.SetPlatformFilter(settings.Linux, settings.Osx, settings.Windows, settings.Unknown)
 
 	return qu.AddQueryResults(reply, query.QueryString(), settings)
 }
@@ -55,6 +56,10 @@ func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.Sear
 type Settings struct {
 	Steamworks bool `json:"steamworks"`
 	MaxPrice   int  `json:"max_price"`
+	Linux      bool `json:"linux"`
+	Osx        bool `json:"osx"`
+	Windows    bool `json:"windows"`
+	Unknown    bool `json:"unknown"`
 }
 
 func (s *GameDealsScope) SetScopeBase(base *scopes.ScopeBase) {

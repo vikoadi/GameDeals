@@ -194,12 +194,16 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 
 		if completeDetail {
 			if info, err := gb.GetInfo(d.Title); err == nil {
-				addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL)
+				if Filter(info.Platforms, platformFilter) {
+					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL)
+				}
 				return nil
 			}
 		}
 		// cant find data from GB database, use cheapshark one
-		addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
+		if platformFilter&8 > 1 { // only add if unknown platform is enabled
+			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
+		}
 
 		if err := reply.Push(result); err != nil {
 			return err
@@ -232,4 +236,22 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	})
 
 	return nil
+}
+
+var platformFilter = 0
+
+func (s *Query) SetPlatformFilter(linux bool, osx bool, windows bool, unknown bool) {
+	platformFilter = 0
+	if linux {
+		platformFilter += 1
+	}
+	if osx {
+		platformFilter += 2
+	}
+	if windows {
+		platformFilter += 4
+	}
+	if unknown {
+		platformFilter += 8
+	}
 }

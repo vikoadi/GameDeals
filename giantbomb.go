@@ -128,3 +128,22 @@ func getExactName(result Result, gameName string) (res Results, err error) {
 func parseJson(jsonStream string, target interface{}) error {
 	return json.NewDecoder(strings.NewReader(jsonStream)).Decode(target)
 }
+
+func Filter(platformsInfo Platforms, filter int) bool {
+	platform := 0
+	for _, platformInfo := range platformsInfo {
+		if platformInfo.Name == "LIN" {
+			platform += 1
+		}
+		if platformInfo.Name == "MAC" {
+			platform += 2
+		}
+		if platformInfo.Name == "PC" {
+			platform += 4
+		}
+		if platform == 0 {
+			platform = 8
+		}
+	}
+	return (filter & platform) > 0
+}
