@@ -14,16 +14,16 @@ func (p *Preview) AddPreviewResult(result *scopes.Result, metadata *scopes.Actio
 	layout3col := scopes.NewColumnLayout(3)
 
 	// Single column layout
-	layout1col.AddColumn("image", "header", "summary", "actions")
+	layout1col.AddColumn("image", "header", "actions", "summary")
 
 	// Two column layout
-	layout2col.AddColumn("image")
-	layout2col.AddColumn("header", "summary", "actions")
+	layout2col.AddColumn("image", "header", "actions")
+	layout2col.AddColumn("summary")
 
 	// Three cokumn layout
 	layout3col.AddColumn("image")
-	layout3col.AddColumn("header", "summary", "actions")
-	layout3col.AddColumn()
+	layout3col.AddColumn("header", "actions")
+	layout3col.AddColumn("summary")
 
 	// Register the layouts we just created
 	reply.RegisterLayout(layout1col, layout2col, layout3col)
@@ -32,25 +32,11 @@ func (p *Preview) AddPreviewResult(result *scopes.Result, metadata *scopes.Actio
 
 	// It has title and a subtitle properties
 	header.AddAttributeMapping("title", "title")
-	header.AddAttributeMapping("subtitle", "subtitle")
+	header.AddAttributeMapping("subtitle", "salePrice")
+	header.AddAttributeMapping("attributes", "attributes")
 
 	// Define the image section
 	image := scopes.NewPreviewWidget("image", "image")
-
-	// Define the summary section
-	description := scopes.NewPreviewWidget("summary", "text")
-	description.AddAttributeValue("text", "No Description")
-
-	if info, err := gb.GetInfo(result.Title()); err != nil {
-		log.Println(err)
-		// fallback to cheapshark image
-		image.AddAttributeMapping("source", "art")
-	} else {
-		// It has a text property, mapped to the result's description property
-		//description.AddAttributeMapping("text", "description")
-		image.AddAttributeValue("source", info.Image.SmallURL)
-		description.AddAttributeValue("text", info.Description)
-	}
 
 	// build variant map.
 	tuple1 := make(map[string]interface{})
@@ -68,6 +54,21 @@ func (p *Preview) AddPreviewResult(result *scopes.Result, metadata *scopes.Actio
 
 	actions := scopes.NewPreviewWidget("actions", "actions")
 	actions.AddAttributeValue("actions", []interface{}{tuple1})
+
+	// Define the summary section
+	description := scopes.NewPreviewWidget("summary", "text")
+	description.AddAttributeValue("text", "No Description")
+
+	if info, err := gb.GetInfo(result.Title()); err != nil {
+		log.Println(err)
+		// fallback to cheapshark image
+		image.AddAttributeMapping("source", "art")
+	} else {
+		// It has a text property, mapped to the result's description property
+		//description.AddAttributeMapping("text", "description")
+		image.AddAttributeValue("source", info.Image.SmallURL)
+		description.AddAttributeValue("text", info.Description)
+	}
 
 	var scope_data string
 	metadata.ScopeData(scope_data)
