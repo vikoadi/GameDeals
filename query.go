@@ -9,6 +9,7 @@ import (
 )
 
 type Query struct {
+	scopeDirectory string
 }
 
 const queryLimit = 30
@@ -35,7 +36,8 @@ const savingCategoryTemplate = `{
   "schema-version": 1,
   "template": {
     "category-layout": "horizontal-list",
-    "card-size": "medium"
+    "card-size": "medium",
+    "overlay":true
   },
   "components": {
     "title": "title",
@@ -49,7 +51,8 @@ const cheapestCategoryTemplate = `{
   "schema-version": 1,
   "template": {
     "category-layout": "horizontal-list",
-    "card-size": "medium"
+    "card-size": "medium",
+    "overlay":true
   },
   "components": {
     "title": "title",
@@ -63,7 +66,8 @@ const bestGameCategoryTemplate = `{
   "schema-version": 1,
   "template": {
     "category-layout": "horizontal-list",
-    "card-size": "medium"
+    "card-size": "medium",
+    "overlay":true
   },
   "components": {
     "title": "title",
@@ -124,7 +128,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	if deals, e := cs.Deals(&bestDealsReq); e != nil {
 		log.Println(e)
 		return e
-	} else if err := registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, deals, true); err != nil {
+	} else if err := s.registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, deals, true); err != nil {
 		log.Println(e)
 		return err
 	}
@@ -133,7 +137,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	if deals, e := cs.Deals(&savingDealsReq); e != nil {
 		log.Println(e)
 		return e
-	} else if err := registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, deals, true); err != nil {
+	} else if err := s.registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, deals, true); err != nil {
 		log.Println(e)
 		return err
 	}
@@ -142,7 +146,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	if deals, e := cs.Deals(&cheapestDealsReq); e != nil {
 		log.Println(e)
 		return e
-	} else if err := registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, deals, true); err != nil {
+	} else if err := s.registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, deals, true); err != nil {
 		log.Println(e)
 		return err
 	}
@@ -151,7 +155,7 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	if deals, e := cs.Deals(&bestGameDealsReq); e != nil {
 		log.Println(e)
 		return e
-	} else if err := registerCategory(reply, "best", "Popular Games", bestGameCategoryTemplate, deals, true); err != nil {
+	} else if err := s.registerCategory(reply, "best", "Popular Games", bestGameCategoryTemplate, deals, true); err != nil {
 		log.Println(e)
 		return err
 	}
@@ -177,14 +181,14 @@ func (s *Query) AddSearchResults(reply *scopes.SearchReply, query string) error 
 		if deals, err := cs.Deals(&searchReq); err != nil {
 			log.Println(err)
 			return err
-		} else if err := registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, deals, false); err != nil {
+		} else if err := s.registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, deals, false); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func registerCategory(reply *scopes.SearchReply, id string, title string, template string, deals cheapshark.Deal, completeDetail bool) error {
+func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title string, template string, deals cheapshark.Deal, completeDetail bool) error {
 	category := reply.RegisterCategory(id, title, "", template)
 
 	result := scopes.NewCategorisedResult(category)
@@ -192,10 +196,12 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 	for _, d := range deals {
 		savingsF, _ := d.Savings.Float64()
 
+		storeIcon := s.getStoreIcon (d.StoreID)
+		log.Println(storeIcon)
 		if completeDetail {
 			if info, err := gb.GetInfo(d.Title); err == nil {
 				if Filter(info.Platforms, platformFilter) {
-					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL)
+					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, storeIcon)
 					if err := reply.Push(result); err != nil {
 						return err
 					}
@@ -205,7 +211,7 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 		}
 		// cant find data from GB database, use cheapshark one
 		if platformFilter&8 > 0 { // only add if unknown platform is enabled
-			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb)
+			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb, storeIcon)
 			if err := reply.Push(result); err != nil {
 				return err
 			}
@@ -215,27 +221,28 @@ func registerCategory(reply *scopes.SearchReply, id string, title string, templa
 	return nil
 }
 
-func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndUri string, title string, normalPrice string, salePrice string, savings string, metacriticScore string, dealRating string, art string) error {
+func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndUri string, title string, normalPrice string, salePrice string, savings string, metacriticScore string, dealRating string, art string, storeIcon string) error {
 
 	result.SetURI(uri)
 	result.SetDndURI(dndUri)
 	result.SetTitle(title)
 	result.SetArt(art)
 	result.Set("normalPrice", normalPrice)
-	result.Set("salePrice", "<b>$"+salePrice+"</b> from $"+normalPrice+" ("+savings+"%)")
+	result.Set("salePrice", "<b>$"+salePrice+"</b> from $"+normalPrice)
 	result.Set("savings", savings)
 	result.Set("metacriticScore", metacriticScore)
 	result.Set("uri", uri)
 
 	type Attr struct {
 		Value string `json:"value"`
-		Icon  string `json:"value"`
+		Icon  string `json:"icon"`
 	}
 
-	result.Set("attributes", []Attr{
-		Attr{"one", ""},
-		Attr{"two", ""},
-	})
+	attr := []Attr {
+		{Value:savings+"%",Icon:storeIcon},
+		{Value:metacriticScore,Icon:"image://theme/starred"},
+	}
+	result.Set("attributes",attr)
 
 	return nil
 }
@@ -256,4 +263,11 @@ func (s *Query) SetPlatformFilter(linux bool, osx bool, windows bool, unknown bo
 	if unknown {
 		platformFilter += 8
 	}
+}
+
+func (s *Query) SetScopeDirectory (dir string) {
+	s.scopeDirectory = dir
+}
+func (s *Query) getStoreIcon (storeID string) string {
+	return s.scopeDirectory+"/"+storeID+".png"
 }

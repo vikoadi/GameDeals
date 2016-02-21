@@ -66,6 +66,7 @@ func (s *GameDealsScope) SetScopeBase(base *scopes.ScopeBase) {
 	s.base = base
 
 	gb.SetCacheDirectory(base.CacheDirectory())
+	qu.SetScopeDirectory(base.ScopeDirectory())
 }
 
 // DEPARTMENTS *****************************************************************
