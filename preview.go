@@ -2,7 +2,7 @@ package main
 
 import (
 	"launchpad.net/go-unityscopes/v2"
-	"log"
+	//"log"
 )
 
 type Preview struct {
@@ -33,10 +33,11 @@ func (p *Preview) AddPreviewResult(result *scopes.Result, metadata *scopes.Actio
 	// It has title and a subtitle properties
 	header.AddAttributeMapping("title", "title")
 	header.AddAttributeMapping("subtitle", "salePrice")
-	header.AddAttributeMapping("attributes", "attributes")
+	header.AddAttributeMapping("attributes", "completeAttributes")
 
 	// Define the image section
 	image := scopes.NewPreviewWidget("image", "image")
+	image.AddAttributeMapping("source", "art")
 
 	// build variant map.
 	tuple1 := make(map[string]interface{})
@@ -57,18 +58,7 @@ func (p *Preview) AddPreviewResult(result *scopes.Result, metadata *scopes.Actio
 
 	// Define the summary section
 	description := scopes.NewPreviewWidget("summary", "text")
-	description.AddAttributeValue("text", "No Description")
-
-	if info, err := gb.GetInfo(result.Title()); err != nil {
-		log.Println(err)
-		// fallback to cheapshark image
-		image.AddAttributeMapping("source", "art")
-	} else {
-		// It has a text property, mapped to the result's description property
-		//description.AddAttributeMapping("text", "description")
-		image.AddAttributeValue("source", info.Image.SmallURL)
-		description.AddAttributeValue("text", info.Description)
-	}
+	description.AddAttributeMapping("text", "description")
 
 	var scope_data string
 	metadata.ScopeData(scope_data)
