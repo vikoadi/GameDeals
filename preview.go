@@ -37,7 +37,7 @@ func (p *Preview) AddPreviewResult(result *scopes.Result, metadata *scopes.Actio
 
 	// Define the image section
 	image := scopes.NewPreviewWidget("image", "image")
-	image.AddAttributeMapping("source", "art")
+	image.AddAttributeMapping("source", "bigArt")
 
 	// build variant map.
 	tuple1 := make(map[string]interface{})

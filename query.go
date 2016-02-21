@@ -208,7 +208,7 @@ func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title str
 		if completeDetail {
 			if info, err := gb.GetInfo(d.Title); err == nil {
 				if Filter(info.Platforms, platformFilter) {
-					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, storeIcon, info.Description, "release", "icon.png")
+					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, info.Image.SmallURL, storeIcon, info.Description, "release", "icon.png")
 					if err := reply.Push(result); err != nil {
 						return err
 					}
@@ -218,7 +218,7 @@ func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title str
 		}
 		// cant find data from GB database, use cheapshark one
 		if platformFilter&8 > 0 { // only add if unknown platform is enabled
-			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb, storeIcon, "", "released on", "")
+			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb, d.Thumb, storeIcon, "", "released on", "")
 			if err := reply.Push(result); err != nil {
 				return err
 			}
@@ -228,12 +228,13 @@ func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title str
 	return nil
 }
 
-func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndUri string, title string, normalPrice string, salePrice string, savings string, metacriticScore string, dealRating string, art string, storeIcon string, description string, releaseDate string, platformsIcon string) error {
+func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndUri string, title string, normalPrice string, salePrice string, savings string, metacriticScore string, dealRating string, art string, bigArt string, storeIcon string, description string, releaseDate string, platformsIcon string) error {
 
 	result.SetURI(uri)
 	result.SetDndURI(dndUri)
 	result.SetTitle(title)
 	result.SetArt(art)
+	result.Set("bigArt", bigArt)
 	result.Set("normalPrice", normalPrice)
 	result.Set("salePrice", "<b>$"+salePrice+"</b> from $"+normalPrice)
 	result.Set("uri", uri)
