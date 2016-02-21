@@ -12,7 +12,7 @@ type Query struct {
 	scopeDirectory string
 }
 
-const queryLimit = 30
+const windowsQueryLimit = 20
 
 const bestDealsCategoryTemplate = `{
   "schema-version": 1,
@@ -124,6 +124,13 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 		max_price = 50
 	}
 
+	// limit cheapshark request if Windows is enabled, because Windows
+	// compatible games are too much
+	queryLimit := 0
+	if settings.Windows {
+		queryLimit = windowsQueryLimit
+	}
+
 	bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
 	if deals, e := cs.Deals(&bestDealsReq); e != nil {
 		log.Println(e)
@@ -196,7 +203,7 @@ func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title str
 	for _, d := range deals {
 		savingsF, _ := d.Savings.Float64()
 
-		storeIcon := s.getStoreIcon (d.StoreID)
+		storeIcon := s.getStoreIcon(d.StoreID)
 		log.Println(storeIcon)
 		if completeDetail {
 			if info, err := gb.GetInfo(d.Title); err == nil {
@@ -238,11 +245,12 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 		Icon  string `json:"icon"`
 	}
 
-	attr := []Attr {
-		{Value:savings+"%",Icon:storeIcon},
-		{Value:metacriticScore,Icon:"image://theme/starred"},
+	attr := []Attr{
+		{Value: savings + "%", Icon: storeIcon},
+		{Value: metacriticScore, Icon: "image://theme/starred"},
 	}
-	result.Set("attributes",attr)
+
+	result.Set("attributes", attr)
 
 	return nil
 }
@@ -265,9 +273,9 @@ func (s *Query) SetPlatformFilter(linux bool, osx bool, windows bool, unknown bo
 	}
 }
 
-func (s *Query) SetScopeDirectory (dir string) {
+func (s *Query) SetScopeDirectory(dir string) {
 	s.scopeDirectory = dir
 }
-func (s *Query) getStoreIcon (storeID string) string {
-	return s.scopeDirectory+"/"+storeID+".png"
+func (s *Query) getStoreIcon(storeID string) string {
+	return s.scopeDirectory + "/" + storeID + ".png"
 }
