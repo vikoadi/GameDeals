@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"strconv"
+	"time"
 )
 
 type Query struct {
@@ -195,6 +196,10 @@ func (s *Query) AddSearchResults(reply *scopes.SearchReply, query string) error 
 	return nil
 }
 
+func getDateString(unixDate int64) string {
+	return time.Unix(unixDate,0).Format ("2 January 2006")
+}
+
 func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title string, template string, deals cheapshark.Deal, completeDetail bool) error {
 	category := reply.RegisterCategory(id, title, "", template)
 
@@ -202,13 +207,18 @@ func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title str
 
 	for _, d := range deals {
 		savingsF, _ := d.Savings.Float64()
+		releaseDate, _ := d.ReleaseDate.Int64()
+		releaseDateStr := ""
+		if r := getDateString (releaseDate);releaseDate!=0 {
+			releaseDateStr=r
+		}
 
 		storeIcon := s.getStoreIcon(d.StoreID)
 		log.Println(storeIcon)
 		if completeDetail {
 			if info, err := gb.GetInfo(d.Title); err == nil {
 				if Filter(info.Platforms, platformFilter) {
-					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, info.Image.SmallURL, storeIcon, info.Description, "release", "icon.png")
+					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, info.Image.SmallURL, storeIcon, info.Description, releaseDateStr, "icon.png")
 					if err := reply.Push(result); err != nil {
 						return err
 					}
@@ -218,7 +228,7 @@ func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title str
 		}
 		// cant find data from GB database, use cheapshark one
 		if platformFilter&8 > 0 { // only add if unknown platform is enabled
-			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb, d.Thumb, storeIcon, "", "released on", "")
+			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb, d.Thumb, storeIcon, "", releaseDateStr, "")
 			if err := reply.Push(result); err != nil {
 				return err
 			}
@@ -249,9 +259,12 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 		Icon  string `json:"icon"`
 	}
 
-	attr := []Attr{
-		{Value: savings + "%", Icon: storeIcon},
-		{Value: metacriticScore, Icon: "image://theme/starred"},
+	attr := []Attr{}
+	if (savings!="0") {
+		attr=append(attr, Attr{Value: savings + "%", Icon: storeIcon})
+	}
+	if (metacriticScore!="0") {
+		attr=append(attr, Attr{Value: metacriticScore, Icon: "image://theme/starred"})
 	}
 
 	result.Set("attributes", attr)
@@ -259,8 +272,9 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	completeAttr := attr
 
 	if releaseDate != "" {
-		completeAttr = append(completeAttr, Attr{Value: releaseDate})
+		completeAttr = append(completeAttr, Attr{Value: "released at "+releaseDate})
 	}
+	
 	if platformsIcon != "" {
 		completeAttr = append(completeAttr, Attr{Icon: platformsIcon})
 	}
