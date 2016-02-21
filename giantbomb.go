@@ -129,7 +129,7 @@ func parseJson(jsonStream string, target interface{}) error {
 	return json.NewDecoder(strings.NewReader(jsonStream)).Decode(target)
 }
 
-func Filter(platformsInfo Platforms, filter int) bool {
+func GetPlatformsFilter(platformsInfo Platforms) int {
 	platform := 0
 	for _, platformInfo := range platformsInfo {
 		if platformInfo.Abbreviation == "LIN" {
@@ -147,6 +147,9 @@ func Filter(platformsInfo Platforms, filter int) bool {
 	if platform == 0 {
 		platform = 8
 	}
+	return platform
+}
 
-	return (filter & platform) > 0
+func Filter(platformsInfo Platforms, filter int) bool {
+	return (filter & GetPlatformsFilter(platformsInfo)) > 0
 }

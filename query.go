@@ -197,7 +197,7 @@ func (s *Query) AddSearchResults(reply *scopes.SearchReply, query string) error 
 }
 
 func getDateString(unixDate int64) string {
-	return time.Unix(unixDate,0).Format ("2 January 2006")
+	return time.Unix(unixDate, 0).Format("2 January 2006")
 }
 
 func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title string, template string, deals cheapshark.Deal, completeDetail bool) error {
@@ -209,8 +209,8 @@ func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title str
 		savingsF, _ := d.Savings.Float64()
 		releaseDate, _ := d.ReleaseDate.Int64()
 		releaseDateStr := ""
-		if r := getDateString (releaseDate);releaseDate!=0 {
-			releaseDateStr=r
+		if r := getDateString(releaseDate); releaseDate != 0 {
+			releaseDateStr = r
 		}
 
 		storeIcon := s.getStoreIcon(d.StoreID)
@@ -218,7 +218,7 @@ func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title str
 		if completeDetail {
 			if info, err := gb.GetInfo(d.Title); err == nil {
 				if Filter(info.Platforms, platformFilter) {
-					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, info.Image.SmallURL, storeIcon, info.Description, releaseDateStr, "icon.png")
+					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, info.Image.SmallURL, storeIcon, info.Description, releaseDateStr, s.getStoreIcon("platform"+strconv.Itoa(GetPlatformsFilter(info.Platforms))))
 					if err := reply.Push(result); err != nil {
 						return err
 					}
@@ -246,9 +246,9 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	result.SetArt(art)
 	result.Set("bigArt", bigArt)
 	result.Set("normalPrice", normalPrice)
-	if (salePrice=="0") {
+	if salePrice == "0" {
 		result.Set("salePrice", "<b>FREE</b> from $"+normalPrice)
-	}else {
+	} else {
 		result.Set("salePrice", "<b>$"+salePrice+"</b> from $"+normalPrice)
 	}
 	result.Set("uri", uri)
@@ -264,11 +264,11 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	}
 
 	attr := []Attr{}
-	if (savings!="0") {
-		attr=append(attr, Attr{Value: savings + "%", Icon: storeIcon})
+	if savings != "0" {
+		attr = append(attr, Attr{Value: savings + "%", Icon: storeIcon})
 	}
-	if (metacriticScore!="0") {
-		attr=append(attr, Attr{Value: metacriticScore, Icon: "image://theme/starred"})
+	if metacriticScore != "0" {
+		attr = append(attr, Attr{Value: metacriticScore, Icon: "image://theme/starred"})
 	}
 
 	result.Set("attributes", attr)
@@ -276,9 +276,9 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	completeAttr := attr
 
 	if releaseDate != "" {
-		completeAttr = append(completeAttr, Attr{Value: "released at "+releaseDate})
+		completeAttr = append(completeAttr, Attr{Value: "released at " + releaseDate})
 	}
-	
+	log.Println(platformsIcon)
 	if platformsIcon != "" {
 		completeAttr = append(completeAttr, Attr{Icon: platformsIcon})
 	}
