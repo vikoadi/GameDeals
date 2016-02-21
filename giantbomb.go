@@ -148,6 +148,5 @@ func Filter(platformsInfo Platforms, filter int) bool {
 		platform = 8
 	}
 
-	log.Println(filter, "x", platform)
 	return (filter & platform) > 0
 }

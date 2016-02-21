@@ -246,7 +246,11 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	result.SetArt(art)
 	result.Set("bigArt", bigArt)
 	result.Set("normalPrice", normalPrice)
-	result.Set("salePrice", "<b>$"+salePrice+"</b> from $"+normalPrice)
+	if (salePrice=="0") {
+		result.Set("salePrice", "<b>FREE</b> from $"+normalPrice)
+	}else {
+		result.Set("salePrice", "<b>$"+salePrice+"</b> from $"+normalPrice)
+	}
 	result.Set("uri", uri)
 	if description != "" {
 		result.Set("description", description)
