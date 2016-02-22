@@ -81,6 +81,7 @@ func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
 		resp, e1 := http.Get(url)
 		if e1 != nil {
 			err = e1
+			defer resp.Body.Close()
 			return
 		}
 		defer resp.Body.Close()

@@ -142,41 +142,22 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 		queryLimit = windowsQueryLimit
 	}
 
-	//bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
-	//if deals, e := cs.Deals(&bestDealsReq); e != nil {
-	//log.Println(e)
-	//return e
-	//} else if err := s.registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, deals, true); err != nil {
-	//log.Println(e)
-	//return err
-	//}
-
-	//savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
-	//if deals, e := cs.Deals(&savingDealsReq); e != nil {
-	//log.Println(e)
-	//return e
-	//} else if err := s.registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, deals, true); err != nil {
-	//log.Println(e)
-	//return err
-	//}
-
-	//cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
-	//if deals, e := cs.Deals(&cheapestDealsReq); e != nil {
-	//log.Println(e)
-	//return e
-	//} else if err := s.registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, deals, true); err != nil {
-	//log.Println(e)
-	//return err
-	//}
-
+	bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
+	savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
+	cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
 	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
-	var e error
-	var deals <-chan Category
-	deals = createDeals(bestGameDealsReq, "best", "Popular Games", bestGameCategoryTemplate, true)
-	deals = createDeals(bestGameDealsReq, "best1", "Popular Games1", bestGameCategoryTemplate, true)
+
+	deals := make(chan Category)
+	go func() {
+		deals <- createDeals(bestDealsReq, "deals", "Best Deals", bestDealsCategoryTemplate, true)
+		deals <- createDeals(savingDealsReq, "saving", "Most Saving", savingCategoryTemplate, true)
+		deals <- createDeals(cheapestDealsReq, "cheapest", "Cheapest", cheapestCategoryTemplate, true)
+		deals <- createDeals(bestGameDealsReq, "best", "Popular Games", bestGameCategoryTemplate, true)
+		close(deals)
+	}()
 
 	if err := s.registerCategory(reply, deals); err != nil {
-		log.Println(e)
+		log.Println(err)
 		return err
 	}
 
@@ -187,28 +168,23 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	return nil
 }
 
-func createDeals(dealsReq cheapshark.DealsRequest, id string, title string, template string, complete bool) <-chan Category {
-	out := make(chan Category)
-	go func() {
-		cat := Category{
-			Id:             id,
-			Title:          title,
-			Template:       template,
-			CompleteDetail: complete,
-		}
-		log.Println("createDeals ", title)
+func createDeals(dealsReq cheapshark.DealsRequest, id string, title string, template string, complete bool) Category {
+	cat := Category{
+		Id:             id,
+		Title:          title,
+		Template:       template,
+		CompleteDetail: complete,
+	}
+	log.Println("createDeals ", title)
 
-		if deals, e := cs.Deals(&dealsReq); e != nil {
-			log.Println(e)
-			out <- cat
-		} else {
-			cat.DealsReq = deals
-			log.Println("createDeals finish ", title)
-			out <- cat
-		}
-		close(out)
-	}()
-	return out
+	if deals, e := cs.Deals(&dealsReq); e != nil {
+		log.Println(e)
+		return cat
+	} else {
+		cat.DealsReq = deals
+		log.Println("createDeals finish ", title)
+		return cat
+	}
 }
 
 var stores cheapshark.Store
