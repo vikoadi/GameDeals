@@ -182,7 +182,6 @@ func createDeals(dealsReq cheapshark.DealsRequest, id string, title string, temp
 		return cat
 	} else {
 		cat.DealsReq = deals
-		log.Println("createDeals finish ", title)
 		return cat
 	}
 }
@@ -217,33 +216,40 @@ func (s *Query) registerCategory(reply *scopes.SearchReply, cats <-chan Category
 	for cat := range cats {
 		log.Println("registerCategory ", cat.Title)
 		category := reply.RegisterCategory(cat.Id, cat.Title, "", cat.Template)
+		res := make(chan *scopes.CategorisedResult)
+		go func() {
+			result := scopes.NewCategorisedResult(category)
 
-		result := scopes.NewCategorisedResult(category)
+			for _, d := range cat.DealsReq {
+				savingsF, _ := d.Savings.Float64()
+				releaseDate, _ := d.ReleaseDate.Int64()
+				releaseDateStr := ""
+				if r := getDateString(releaseDate); releaseDate != 0 {
+					releaseDateStr = r
+				}
 
-		for _, d := range cat.DealsReq {
-			savingsF, _ := d.Savings.Float64()
-			releaseDate, _ := d.ReleaseDate.Int64()
-			releaseDateStr := ""
-			if r := getDateString(releaseDate); releaseDate != 0 {
-				releaseDateStr = r
-			}
-
-			storeIcon := s.getStoreIcon(d.StoreID)
-			log.Println(storeIcon)
-			if cat.CompleteDetail {
-				if info, err := gb.GetInfo(d.Title); err == nil {
-					if Filter(info.Platforms, platformFilter) {
-						addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, info.Image.SmallURL, storeIcon, info.Description, releaseDateStr, s.getStoreIcon("platform"+strconv.Itoa(GetPlatformsFilter(info.Platforms))))
-						reply.Push(result)
+				storeIcon := s.getStoreIcon(d.StoreID)
+				if cat.CompleteDetail {
+					if info, err := gb.GetInfo(d.Title); err == nil {
+						if Filter(info.Platforms, platformFilter) {
+							addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, info.Image.SmallURL, storeIcon, info.Description, releaseDateStr, s.getStoreIcon("platform"+strconv.Itoa(GetPlatformsFilter(info.Platforms))))
+							res <- result
+							//reply.Push(result)
+						}
+						continue
 					}
-					continue
+				}
+				// cant find data from GB database, use cheapshark one
+				if platformFilter&8 > 0 { // only add if unknown platform is enabled
+					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb, d.Thumb, storeIcon, "", releaseDateStr, "")
+					//reply.Push(result)
+					res <- result
 				}
 			}
-			// cant find data from GB database, use cheapshark one
-			if platformFilter&8 > 0 { // only add if unknown platform is enabled
-				addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb, d.Thumb, storeIcon, "", releaseDateStr, "")
-				reply.Push(result)
-			}
+			close(res)
+		}()
+		for r := range res {
+			reply.Push(r)
 		}
 	}
 
@@ -290,7 +296,6 @@ func addCategorisedGameResult(result *scopes.CategorisedResult, uri string, dndU
 	if releaseDate != "" {
 		completeAttr = append(completeAttr, Attr{Value: "released at " + releaseDate})
 	}
-	log.Println(platformsIcon)
 	if platformsIcon != "" {
 		completeAttr = append(completeAttr, Attr{Icon: platformsIcon})
 	}
