@@ -112,8 +112,18 @@ func (s *Query) AddQueryResults(reply *scopes.SearchReply, query string, setting
 		return s.AddSearchResults(reply, query)
 	}
 }
+
+type Category struct {
+	DealsReq       cheapshark.Deal
+	Id             string
+	Title          string
+	Template       string
+	CompleteDetail bool
+}
+
+var cs cheapshark.CheapShark
+
 func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, settings Settings) error {
-	var cs cheapshark.CheapShark
 
 	steamworks := settings.Steamworks
 	max_price := settings.MaxPrice
@@ -132,38 +142,40 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 		queryLimit = windowsQueryLimit
 	}
 
-	bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
-	if deals, e := cs.Deals(&bestDealsReq); e != nil {
-		log.Println(e)
-		return e
-	} else if err := s.registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, deals, true); err != nil {
-		log.Println(e)
-		return err
-	}
+	//bestDealsReq := cheapshark.DealsRequest{SortBy: "Deal Rating", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
+	//if deals, e := cs.Deals(&bestDealsReq); e != nil {
+	//log.Println(e)
+	//return e
+	//} else if err := s.registerCategory(reply, "bestDeals", "Best Deals", bestDealsCategoryTemplate, deals, true); err != nil {
+	//log.Println(e)
+	//return err
+	//}
 
-	savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
-	if deals, e := cs.Deals(&savingDealsReq); e != nil {
-		log.Println(e)
-		return e
-	} else if err := s.registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, deals, true); err != nil {
-		log.Println(e)
-		return err
-	}
+	//savingDealsReq := cheapshark.DealsRequest{SortBy: "Savings", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
+	//if deals, e := cs.Deals(&savingDealsReq); e != nil {
+	//log.Println(e)
+	//return e
+	//} else if err := s.registerCategory(reply, "saving", "Most Saving", savingCategoryTemplate, deals, true); err != nil {
+	//log.Println(e)
+	//return err
+	//}
 
-	cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
-	if deals, e := cs.Deals(&cheapestDealsReq); e != nil {
-		log.Println(e)
-		return e
-	} else if err := s.registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, deals, true); err != nil {
-		log.Println(e)
-		return err
-	}
+	//cheapestDealsReq := cheapshark.DealsRequest{SortBy: "Price", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
+	//if deals, e := cs.Deals(&cheapestDealsReq); e != nil {
+	//log.Println(e)
+	//return e
+	//} else if err := s.registerCategory(reply, "cheapest", "Cheapest", cheapestCategoryTemplate, deals, true); err != nil {
+	//log.Println(e)
+	//return err
+	//}
 
 	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
-	if deals, e := cs.Deals(&bestGameDealsReq); e != nil {
-		log.Println(e)
-		return e
-	} else if err := s.registerCategory(reply, "best", "Popular Games", bestGameCategoryTemplate, deals, true); err != nil {
+	var e error
+	var deals <-chan Category
+	deals = createDeals(bestGameDealsReq, "best", "Popular Games", bestGameCategoryTemplate, true)
+	deals = createDeals(bestGameDealsReq, "best1", "Popular Games1", bestGameCategoryTemplate, true)
+
+	if err := s.registerCategory(reply, deals); err != nil {
 		log.Println(e)
 		return err
 	}
@@ -173,6 +185,30 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	//}
 
 	return nil
+}
+
+func createDeals(dealsReq cheapshark.DealsRequest, id string, title string, template string, complete bool) <-chan Category {
+	out := make(chan Category)
+	go func() {
+		cat := Category{
+			Id:             id,
+			Title:          title,
+			Template:       template,
+			CompleteDetail: complete,
+		}
+		log.Println("createDeals ", title)
+
+		if deals, e := cs.Deals(&dealsReq); e != nil {
+			log.Println(e)
+			out <- cat
+		} else {
+			cat.DealsReq = deals
+			log.Println("createDeals finish ", title)
+			out <- cat
+		}
+		close(out)
+	}()
+	return out
 }
 
 var stores cheapshark.Store
@@ -186,12 +222,13 @@ func (s *Query) AddSearchResults(reply *scopes.SearchReply, query string) error 
 
 	for _, store := range stores {
 		searchReq := cheapshark.DealsRequest{Title: query, StoreID: store.StoreID}
-		if deals, err := cs.Deals(&searchReq); err != nil {
+		if _, err := cs.Deals(&searchReq); err != nil {
 			log.Println(err)
 			return err
-		} else if err := s.registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, deals, false); err != nil {
-			return err
 		}
+		//else if err := s.registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, deals, false); err != nil {
+		//return err
+		//}
 	}
 	return nil
 }
@@ -200,37 +237,36 @@ func getDateString(unixDate int64) string {
 	return time.Unix(unixDate, 0).Format("2 January 2006")
 }
 
-func (s *Query) registerCategory(reply *scopes.SearchReply, id string, title string, template string, deals cheapshark.Deal, completeDetail bool) error {
-	category := reply.RegisterCategory(id, title, "", template)
+func (s *Query) registerCategory(reply *scopes.SearchReply, cats <-chan Category) error {
+	for cat := range cats {
+		log.Println("registerCategory ", cat.Title)
+		category := reply.RegisterCategory(cat.Id, cat.Title, "", cat.Template)
 
-	result := scopes.NewCategorisedResult(category)
+		result := scopes.NewCategorisedResult(category)
 
-	for _, d := range deals {
-		savingsF, _ := d.Savings.Float64()
-		releaseDate, _ := d.ReleaseDate.Int64()
-		releaseDateStr := ""
-		if r := getDateString(releaseDate); releaseDate != 0 {
-			releaseDateStr = r
-		}
-
-		storeIcon := s.getStoreIcon(d.StoreID)
-		log.Println(storeIcon)
-		if completeDetail {
-			if info, err := gb.GetInfo(d.Title); err == nil {
-				if Filter(info.Platforms, platformFilter) {
-					addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, info.Image.SmallURL, storeIcon, info.Description, releaseDateStr, s.getStoreIcon("platform"+strconv.Itoa(GetPlatformsFilter(info.Platforms))))
-					if err := reply.Push(result); err != nil {
-						return err
-					}
-				}
-				continue
+		for _, d := range cat.DealsReq {
+			savingsF, _ := d.Savings.Float64()
+			releaseDate, _ := d.ReleaseDate.Int64()
+			releaseDateStr := ""
+			if r := getDateString(releaseDate); releaseDate != 0 {
+				releaseDateStr = r
 			}
-		}
-		// cant find data from GB database, use cheapshark one
-		if platformFilter&8 > 0 { // only add if unknown platform is enabled
-			addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb, d.Thumb, storeIcon, "", releaseDateStr, "")
-			if err := reply.Push(result); err != nil {
-				return err
+
+			storeIcon := s.getStoreIcon(d.StoreID)
+			log.Println(storeIcon)
+			if cat.CompleteDetail {
+				if info, err := gb.GetInfo(d.Title); err == nil {
+					if Filter(info.Platforms, platformFilter) {
+						addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), info.Image.ThumbURL, info.Image.SmallURL, storeIcon, info.Description, releaseDateStr, s.getStoreIcon("platform"+strconv.Itoa(GetPlatformsFilter(info.Platforms))))
+						reply.Push(result)
+					}
+					continue
+				}
+			}
+			// cant find data from GB database, use cheapshark one
+			if platformFilter&8 > 0 { // only add if unknown platform is enabled
+				addCategorisedGameResult(result, "http://www.cheapshark.com/redirect?dealID="+d.DealID, d.Title, d.Title, d.NormalPrice.String(), d.SalePrice.String(), strconv.Itoa(int(math.Floor(savingsF))), d.MetacriticScore.String(), d.DealRating.String(), d.Thumb, d.Thumb, storeIcon, "", releaseDateStr, "")
+				reply.Push(result)
 			}
 		}
 	}
