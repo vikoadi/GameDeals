@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -61,6 +62,13 @@ func (g *GiantBomb) SetCacheDirectory(directory string) {
 
 func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
 
+	url, _ := url.Parse("http://www.giantbomb.com/api/search/?field_list=image,name,genres,platforms,description&limit=1&format=json&resources=game")
+	q := url.Query()
+
+	q.Set("api_key", api_key)
+	q.Set("queary", gameName)
+	url.RawQuery = q.Encode()
+
 	var res Result
 	log.Println("getinfo for ", gameName)
 	if content, inCache := GiantBombCache.Get(gameName); inCache {
@@ -77,11 +85,10 @@ func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
 			return
 		}
 	} else {
-		url := "http://www.giantbomb.com/api/search/?api_key=" + api_key + "&field_list=image,name,genres,platforms,description&limit=1&format=json&resources=game&query=" + gameName
-		resp, e1 := http.Get(url)
+		resp, e1 := http.Get(url.RequestURI())
 		if e1 != nil {
+			log.Println("error getting url for",gameName)
 			err = e1
-			defer resp.Body.Close()
 			return
 		}
 		defer resp.Body.Close()
