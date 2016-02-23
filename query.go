@@ -148,11 +148,15 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 	bestGameDealsReq := cheapshark.DealsRequest{SortBy: "Metacritic", OnSale: true, Steamworks: steamworks, UpperPrice: max_price, PageSize: queryLimit}
 
 	deals := make(chan Category)
+	bestCategory := createDeals(bestDealsReq, "deals", "Best Deals", bestDealsCategoryTemplate, true)
+	savingCategory := createDeals(savingDealsReq, "saving", "Most Saving", savingCategoryTemplate, true)
+	cheapCategory := createDeals(cheapestDealsReq, "cheapest", "Cheapest", cheapestCategoryTemplate, true)
+	bestGameCategory := createDeals(bestGameDealsReq, "best", "Popular Games", bestGameCategoryTemplate, true)
 	go func() {
-		deals <- createDeals(bestDealsReq, "deals", "Best Deals", bestDealsCategoryTemplate, true)
-		deals <- createDeals(savingDealsReq, "saving", "Most Saving", savingCategoryTemplate, true)
-		deals <- createDeals(cheapestDealsReq, "cheapest", "Cheapest", cheapestCategoryTemplate, true)
-		deals <- createDeals(bestGameDealsReq, "best", "Popular Games", bestGameCategoryTemplate, true)
+		deals <- bestCategory
+		deals <- savingCategory
+		deals <- cheapCategory
+		deals <- bestGameCategory
 		close(deals)
 	}()
 
