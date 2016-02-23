@@ -40,15 +40,18 @@ func (s *GameDealsScope) Search(query *scopes.CannedQuery, metadata *scopes.Sear
 	//root_department := s.CreateDepartments(query, metadata, reply)
 	//reply.RegisterDepartments(root_department)
 
+	gb.SetCacheDirectory(s.base.CacheDirectory())
+	qu.SetScopeDirectory(s.base.ScopeDirectory())
+
+	var settings Settings
+	s.base.Settings(&settings)
+	qu.SetPlatformFilter(settings.Linux, settings.Osx, settings.Windows, settings.Unknown)
+
 	// test incompatible features in RTM version of libunity-scopes
 	filter1 := scopes.NewOptionSelectorFilter("f1", "Options", false)
 	var filterState scopes.FilterState
 	// for RTM version of libunity-scopes we should see a log message
 	reply.PushFilters([]scopes.Filter{filter1}, filterState)
-
-	var settings Settings
-	s.base.Settings(&settings)
-	qu.SetPlatformFilter(settings.Linux, settings.Osx, settings.Windows, settings.Unknown)
 
 	return qu.AddQueryResults(reply, query.QueryString(), settings)
 }
@@ -64,9 +67,6 @@ type Settings struct {
 
 func (s *GameDealsScope) SetScopeBase(base *scopes.ScopeBase) {
 	s.base = base
-
-	gb.SetCacheDirectory(base.CacheDirectory())
-	qu.SetScopeDirectory(base.ScopeDirectory())
 }
 
 // DEPARTMENTS *****************************************************************
