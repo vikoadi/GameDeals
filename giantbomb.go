@@ -87,7 +87,7 @@ func (g *GiantBomb) GetInfo(gameName string) (r Results, err error) {
 	} else {
 		resp, e1 := http.Get(url.RequestURI())
 		if e1 != nil {
-			log.Println("error getting url for",gameName)
+			log.Println("error getting url for", gameName)
 			err = e1
 			return
 		}

@@ -165,10 +165,6 @@ func (s *Query) AddEmptyQueryResults(reply *scopes.SearchReply, query string, se
 		return err
 	}
 
-	//if err := registerCategory(reply, "bundles", "Game Bundles", bundleCategoryTemplate, "query"); err != nil {
-	//return err
-	//}
-
 	return nil
 }
 
@@ -179,7 +175,6 @@ func createDeals(dealsReq cheapshark.DealsRequest, id string, title string, temp
 		Template:       template,
 		CompleteDetail: complete,
 	}
-	log.Println("createDeals ", title)
 
 	if deals, e := cs.Deals(&dealsReq); e != nil {
 		log.Println(e)
@@ -199,16 +194,23 @@ func (s *Query) AddSearchResults(reply *scopes.SearchReply, query string) error 
 		stores = cs.Stores()
 	}
 
-	for _, store := range stores {
-		searchReq := cheapshark.DealsRequest{Title: query, StoreID: store.StoreID}
-		if _, err := cs.Deals(&searchReq); err != nil {
-			log.Println(err)
-			return err
+	deals := make(chan Category)
+	go func() {
+		for _, store := range stores {
+			searchReq := cheapshark.DealsRequest{Title: query, StoreID: store.StoreID, PageSize: 5}
+			cat := createDeals(searchReq, store.StoreID, store.StoreName, searchCategoryTemplate, false)
+			deals <- cat
 		}
 		//else if err := s.registerCategory(reply, store.StoreID, store.StoreName, searchCategoryTemplate, deals, false); err != nil {
 		//return err
 		//}
+	}()
+
+	if err := s.registerCategory(reply, deals); err != nil {
+		log.Println(err)
+		return err
 	}
+
 	return nil
 }
 
